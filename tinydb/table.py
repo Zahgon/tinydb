@@ -125,14 +125,14 @@ class Table:
         """
         Get the table name.
         """
-        return self._name
+        pass
 
     @property
     def storage(self) -> Storage:
         """
         Get the table storage instance.
         """
-        return self._storage
+        pass
 
     def insert(self, document: Mapping) -> int:
         """
@@ -141,38 +141,7 @@ class Table:
         :param document: the document to insert
         :returns: the inserted document's ID
         """
-
-        # Make sure the document implements the ``Mapping`` interface
-        if not isinstance(document, Mapping):
-            raise ValueError('Document is not a Mapping')
-
-        # First, we get the document ID for the new document
-        if isinstance(document, self.document_class):
-            # For a `Document` object we use the specified ID
-            doc_id = document.doc_id
-
-            # We also reset the stored next ID so the next insert won't
-            # re-use document IDs by accident when storing an old value
-            self._next_id = None
-        else:
-            # In all other cases we use the next free ID
-            doc_id = self._get_next_id()
-
-        # Now, we update the table and add the document
-        def updater(table: dict):
-            if doc_id in table:
-                raise ValueError(f'Document with ID {str(doc_id)} '
-                                 f'already exists')
-
-            # By calling ``dict(document)`` we convert the data we got to a
-            # ``dict`` instance even if it was a different class that
-            # implemented the ``Mapping`` interface
-            table[doc_id] = dict(document)
-
-        # See below for details on ``Table._update``
-        self._update_table(updater)
-
-        return doc_id
+        pass
 
     def insert_multiple(self, documents: Iterable[Mapping]) -> list[int]:
         """
@@ -181,42 +150,7 @@ class Table:
         :param documents: an Iterable of documents to insert
         :returns: a list containing the inserted documents' IDs
         """
-        doc_ids = []
-
-        def updater(table: dict):
-            for document in documents:
-
-                # Make sure the document implements the ``Mapping`` interface
-                if not isinstance(document, Mapping):
-                    raise ValueError('Document is not a Mapping')
-
-                if isinstance(document, self.document_class):
-                    # Check if document does not override an existing document
-                    if document.doc_id in table:
-                        raise ValueError(
-                            f'Document with ID {str(document.doc_id)} '
-                            f'already exists'
-                        )
-
-                    # Store the doc_id, so we can return all document IDs
-                    # later. Then save the document with its doc_id and
-                    # skip the rest of the current loop
-                    doc_id = document.doc_id
-                    doc_ids.append(doc_id)
-                    table[doc_id] = dict(document)
-                    continue
-
-                # Generate new document ID for this document
-                # Store the doc_id, so we can return all document IDs
-                # later, then save the document with the new doc_id
-                doc_id = self._get_next_id()
-                doc_ids.append(doc_id)
-                table[doc_id] = dict(document)
-
-        # See below for details on ``Table._update``
-        self._update_table(updater)
-
-        return doc_ids
+        pass
 
     def all(self) -> list[Document]:
         """
@@ -224,13 +158,7 @@ class Table:
 
         :returns: a list with all documents.
         """
-
-        # iter(self) (implemented in Table.__iter__ provides an iterator
-        # that returns all documents in this table. We use it to get a list
-        # of all documents by using the ``list`` constructor to perform the
-        # conversion.
-
-        return list(iter(self))
+        pass
 
     def search(self, cond: QueryLike) -> list[Document]:
         """
@@ -391,15 +319,7 @@ class Table:
         :param cond: the condition use
         :param doc_id: the document ID to look for
         """
-        if doc_id is not None:
-            # Documents specified by ID
-            return self.get(doc_id=doc_id) is not None
-
-        elif cond is not None:
-            # Document specified by condition
-            return self.get(cond) is not None
-
-        raise RuntimeError('You have to pass either cond or doc_id')
+        pass
 
     def update(
         self,
@@ -420,90 +340,7 @@ class Table:
         :param doc_ids: a list of document IDs
         :returns: a list containing the updated document's ID
         """
-
-        # Define the function that will perform the update
-        if callable(fields):
-            def perform_update(table, doc_id):
-                # Update documents by calling the update function provided by
-                # the user
-                fields(table[doc_id])
-        else:
-            def perform_update(table, doc_id):
-                # Update documents by setting all fields from the provided data
-                table[doc_id].update(fields)
-
-        if doc_ids is not None:
-            # Perform the update operation for documents specified by a list
-            # of document IDs. Document IDs that don't exist in the table are
-            # silently skipped, mirroring the behaviour of ``get(doc_ids=...)``
-            # (see issue #591). The list of *actually* updated IDs is
-            # determined inside the updater so it reflects the table state at
-            # write time.
-            requested_ids = list(doc_ids)
-            updated_ids: list[int] = []
-
-            def updater(table: dict):
-                # Filter to IDs that exist *before* performing any updates,
-                # so the operation is atomic: either every existing target is
-                # updated, or none is.
-                updated_ids.extend(
-                    doc_id for doc_id in requested_ids if doc_id in table
-                )
-                for doc_id in updated_ids:
-                    perform_update(table, doc_id)
-
-            # Perform the update operation (see _update_table for details)
-            self._update_table(updater)
-
-            return updated_ids
-
-        elif cond is not None:
-            # Perform the update operation for documents specified by a query
-
-            # Collect affected doc_ids
-            updated_ids = []
-
-            def updater(table: dict):
-                _cond = cast(QueryLike, cond)
-
-                # We need to convert the keys iterator to a list because
-                # we may remove entries from the ``table`` dict during
-                # iteration and doing this without the list conversion would
-                # result in an exception (RuntimeError: dictionary changed size
-                # during iteration)
-                for doc_id in list(table.keys()):
-                    # Pass through all documents to find documents matching the
-                    # query. Call the processing callback with the document ID
-                    if _cond(table[doc_id]):
-                        # Add ID to list of updated documents
-                        updated_ids.append(doc_id)
-
-                        # Perform the update (see above)
-                        perform_update(table, doc_id)
-
-            # Perform the update operation (see _update_table for details)
-            self._update_table(updater)
-
-            return updated_ids
-
-        else:
-            # Update all documents unconditionally
-
-            updated_ids = []
-
-            def updater(table: dict):
-                # Process all documents
-                for doc_id in list(table.keys()):
-                    # Add ID to list of updated documents
-                    updated_ids.append(doc_id)
-
-                    # Perform the update (see above)
-                    perform_update(table, doc_id)
-
-            # Perform the update operation (see _update_table for details)
-            self._update_table(updater)
-
-            return updated_ids
+        pass
 
     def update_multiple(
         self,
@@ -516,46 +353,7 @@ class Table:
 
         :returns: a list containing the updated document's ID
         """
-
-        # Define the function that will perform the update
-        def perform_update(fields, table, doc_id):
-            if callable(fields):
-                # Update documents by calling the update function provided
-                # by the user
-                fields(table[doc_id])
-            else:
-                # Update documents by setting all fields from the provided
-                # data
-                table[doc_id].update(fields)
-
-        # Perform the update operation for documents specified by a query
-
-        # Collect affected doc_ids
-        updated_ids = []
-
-        def updater(table: dict):
-            # We need to convert the keys iterator to a list because
-            # we may remove entries from the ``table`` dict during
-            # iteration and doing this without the list conversion would
-            # result in an exception (RuntimeError: dictionary changed size
-            # during iteration)
-            for doc_id in list(table.keys()):
-                for fields, cond in updates:
-                    _cond = cast(QueryLike, cond)
-
-                    # Pass through all documents to find documents matching the
-                    # query. Call the processing callback with the document ID
-                    if _cond(table[doc_id]):
-                        # Add ID to list of updated documents
-                        updated_ids.append(doc_id)
-
-                        # Perform the update (see above)
-                        perform_update(fields, table, doc_id)
-
-        # Perform the update operation (see _update_table for details)
-        self._update_table(updater)
-
-        return updated_ids
+        pass
 
     def upsert(self, document: Mapping, cond: Optional[QueryLike] = None) -> list[int]:
         """
@@ -573,31 +371,7 @@ class Table:
         Document with a doc_id
         :returns: a list containing the updated documents' IDs
         """
-
-        # Extract doc_id
-        if isinstance(document, self.document_class) and hasattr(document, 'doc_id'):
-            doc_ids: Optional[list[int]] = [document.doc_id]
-        else:
-            doc_ids = None
-
-        # Make sure we can actually find a matching document
-        if doc_ids is None and cond is None:
-            raise ValueError("If you don't specify a search query, you must "
-                             "specify a doc_id. Hint: use a table.Document "
-                             "object.")
-
-        # Perform the update operation. ``update`` returns an empty list
-        # when no existing document matches the doc_id / query, in which
-        # case we fall through to insert below.
-        updated_docs = self.update(document, cond, doc_ids)
-
-        # If documents have been updated: return their IDs
-        if updated_docs:
-            return updated_docs
-
-        # There are no documents that match the specified query -> insert the
-        # data as a new document
-        return [self.insert(document)]
+        pass
 
     def remove(
         self,
@@ -615,73 +389,13 @@ class Table:
         :param doc_ids: a list of document IDs
         :returns: a list containing the removed documents' ID
         """
-        if doc_ids is not None:
-            # This function returns the list of IDs for the documents that
-            # have been removed. Document IDs that don't exist in the table
-            # are silently skipped, mirroring the behaviour of
-            # ``get(doc_ids=...)`` (see issue #591). The list of *actually*
-            # removed IDs is determined inside the updater so it reflects the
-            # table state at write time.
-            requested_ids = list(doc_ids)
-            removed_ids: list[int] = []
-
-            def updater(table: dict):
-                # Filter to IDs that exist *before* performing any removals,
-                # so the operation is atomic: either every existing target is
-                # removed, or none is.
-                removed_ids.extend(
-                    doc_id for doc_id in requested_ids if doc_id in table
-                )
-                for doc_id in removed_ids:
-                    del table[doc_id]
-
-            # Perform the remove operation
-            self._update_table(updater)
-
-            return removed_ids
-
-        if cond is not None:
-            removed_ids = []
-
-            # This updater function will be called with the table data
-            # as its first argument. See ``Table._update`` for details on this
-            # operation
-            def updater(table: dict):
-                # We need to convince MyPy (the static type checker) that
-                # the ``cond is not None`` invariant still holds true when
-                # the updater function is called
-                _cond = cast(QueryLike, cond)
-
-                # We need to convert the keys iterator to a list because
-                # we may remove entries from the ``table`` dict during
-                # iteration and doing this without the list conversion would
-                # result in an exception (RuntimeError: dictionary changed size
-                # during iteration)
-                for doc_id in list(table.keys()):
-                    if _cond(table[doc_id]):
-                        # Add document ID to list of removed document IDs
-                        removed_ids.append(doc_id)
-
-                        # Remove document from the table
-                        table.pop(doc_id)
-
-            # Perform the remove operation
-            self._update_table(updater)
-
-            return removed_ids
-
-        raise RuntimeError('Use truncate() to remove all documents')
+        pass
 
     def truncate(self) -> None:
         """
         Truncate the table by removing all documents.
         """
-
-        # Update the table by resetting all data
-        self._update_table(lambda table: table.clear())
-
-        # Reset document ID counter
-        self._next_id = None
+        pass
 
     def count(self, cond: QueryLike) -> int:
         """
@@ -689,15 +403,13 @@ class Table:
 
         :param cond: the condition use
         """
-
-        return len(self.search(cond))
+        pass
 
     def clear_cache(self) -> None:
         """
         Clear the query cache.
         """
-
-        self._query_cache.clear()
+        pass
 
     def __len__(self):
         """
@@ -722,36 +434,7 @@ class Table:
         """
         Return the ID for a newly inserted document.
         """
-
-        # If we already know the next ID
-        if self._next_id is not None:
-            next_id = self._next_id
-            self._next_id = next_id + 1
-
-            return next_id
-
-        # Determine the next document ID by finding out the max ID value
-        # of the current table documents
-
-        # Read the table documents
-        table = self._read_table()
-
-        # If the table is empty, set the initial ID
-        if not table:
-            next_id = 1
-            self._next_id = next_id + 1
-
-            return next_id
-
-        # Determine the next ID based on the maximum ID that's currently in use
-        max_id = max(self.document_id_class(i) for i in table.keys())
-        next_id = max_id + 1
-
-        # The next ID we will return AFTER this call needs to be larger than
-        # the current next ID we calculated
-        self._next_id = next_id + 1
-
-        return next_id
+        pass
 
     def _read_table(self) -> dict[str, Mapping]:
         """
@@ -791,41 +474,4 @@ class Table:
         As a further optimization, we don't convert the documents into the
         document class, as the table data will *not* be returned to the user.
         """
-
-        tables = self._storage.read()
-
-        if tables is None:
-            # The database is empty
-            tables = {}
-
-        try:
-            raw_table = tables[self.name]
-        except KeyError:
-            # The table does not exist yet, so it is empty
-            raw_table = {}
-
-        # Convert the document IDs to the document ID class.
-        # This is required as the rest of TinyDB expects the document IDs
-        # to be an instance of ``self.document_id_class`` but the storage
-        # might convert dict keys to strings.
-        table = {
-            self.document_id_class(doc_id): doc
-            for doc_id, doc in raw_table.items()
-        }
-
-        # Perform the table update operation
-        updater(table)
-
-        # Convert the document IDs back to strings.
-        # This is required as some storages (most notably the JSON file format)
-        # don't support IDs other than strings.
-        tables[self.name] = {
-            str(doc_id): doc
-            for doc_id, doc in table.items()
-        }
-
-        # Write the newly updated data back to the storage
-        self._storage.write(tables)
-
-        # Clear the query cache, as the table contents have changed
-        self.clear_cache()
+        pass

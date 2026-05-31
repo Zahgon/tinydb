@@ -339,13 +339,7 @@ class Query(QueryInstance):
         :param regex: The regular expression to use for matching
         :param flags: regex flags to pass to ``re.match``
         """
-        def test(value):
-            if not isinstance(value, str):
-                return False
-
-            return re.match(regex, value, flags) is not None
-
-        return self._generate_test(test, ('matches', self._path, regex))
+        pass
 
     def search(self, regex: str, flags: int = 0) -> QueryInstance:
         """
@@ -413,18 +407,7 @@ class Query(QueryInstance):
                      a list of which at least one document has to be contained
                      in the tested document.
         """
-        if callable(cond):
-            def test(value):
-                return is_sequence(value) and any(cond(e) for e in value)
-
-        else:
-            def test(value):
-                return is_sequence(value) and any(e in cond for e in value)
-
-        return self._generate_test(
-            lambda value: test(value),
-            ('any', self._path, freeze(cond))
-        )
+        pass
 
     def all(self, cond: Union['QueryInstance', list[Any]]) -> QueryInstance:
         """
@@ -446,18 +429,7 @@ class Query(QueryInstance):
         :param cond: Either a query that all documents have to match or a list
                      which has to be contained in the tested document.
         """
-        if callable(cond):
-            def test(value):
-                return is_sequence(value) and all(cond(e) for e in value)
-
-        else:
-            def test(value):
-                return is_sequence(value) and all(e in value for e in cond)
-
-        return self._generate_test(
-            lambda value: test(value),
-            ('all', self._path, freeze(cond))
-        )
+        pass
 
     def one_of(self, items: list[Any]) -> QueryInstance:
         """
@@ -467,24 +439,10 @@ class Query(QueryInstance):
 
         :param items: The list of items to check with
         """
-        return self._generate_test(
-            lambda value: value in items,
-            ('one_of', self._path, freeze(items))
-        )
+        pass
 
     def fragment(self, document: Mapping) -> QueryInstance:
-        def test(value):
-            for key in document:
-                if key not in value or value[key] != document[key]:
-                    return False
-
-            return True
-
-        return self._generate_test(
-            lambda value: test(value),
-            ('fragment', freeze(document)),
-            allow_empty_path=True
-        )
+        pass
 
     def noop(self) -> QueryInstance:
         """
@@ -492,27 +450,14 @@ class Query(QueryInstance):
 
         Useful for having a base value when composing queries dynamically.
         """
-
-        return QueryInstance(
-            lambda value: True,
-            ()
-        )
+        pass
 
     def map(self, fn: Callable[[Any], Any]) -> 'Query':
         """
         Add a function to the query path. Similar to __getattr__ but for
         arbitrary functions.
         """
-        query = type(self)()
-
-        # Now we add the callable to the query path ...
-        query._path = self._path + (fn,)
-
-        # ... and kill the hash - callable objects can be mutable, so it's
-        # harmful to cache their results.
-        query._hash = None
-
-        return query
+        pass
 
 def where(key: str) -> Query:
     """

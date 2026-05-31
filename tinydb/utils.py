@@ -56,14 +56,14 @@ class LRUCache(abc.MutableMapping, Generic[K, V]):
 
     @property
     def lru(self) -> list[K]:
-        return list(self.cache.keys())
+        pass
 
     @property
     def length(self) -> int:
-        return len(self.cache)
+        pass
 
     def clear(self) -> None:
-        self.cache.clear()
+        pass
 
     def __len__(self) -> int:
         return self.length
@@ -98,17 +98,7 @@ class LRUCache(abc.MutableMapping, Generic[K, V]):
         return default
 
     def set(self, key: K, value: V):
-        if key in self.cache:
-            self.cache[key] = value
-            self.cache.move_to_end(key, last=True)
-        else:
-            self.cache[key] = value
-
-            # Check, if the cache is full and we have to remove old items
-            # If the queue is of unlimited size, self.capacity is NaN and
-            # x > NaN is always False in Python and the cache won't be cleared.
-            if self.capacity is not None and self.length > self.capacity:
-                self.cache.popitem(last=False)
+        pass
 
 
 class FrozenDict(dict):

@@ -120,7 +120,7 @@ class JSONStorage(Storage):
         self._handle = open(path, mode=self._mode, encoding=encoding)
 
     def close(self) -> None:
-        self._handle.close()
+        pass
 
     def read(self) -> Optional[dict[str, dict[str, Any]]]:
         # Get the file size by moving the cursor to the file end and reading
@@ -141,24 +141,7 @@ class JSONStorage(Storage):
 
     def write(self, data: dict[str, dict[str, Any]]):
         # Move the cursor to the beginning of the file just in case
-        self._handle.seek(0)
-
-        # Serialize the database state using the user-provided arguments
-        serialized = json.dumps(data, **self.kwargs)
-
-        # Write the serialized data to the file
-        try:
-            self._handle.write(serialized)
-        except io.UnsupportedOperation:
-            raise IOError('Cannot write to the database. Access mode is "{0}"'.format(self._mode))
-
-        # Ensure the file has been written
-        self._handle.flush()
-        os.fsync(self._handle.fileno())
-
-        # Remove data that is behind the new cursor in case the file has
-        # gotten shorter
-        self._handle.truncate()
+        pass
 
 
 class MemoryStorage(Storage):
@@ -178,4 +161,4 @@ class MemoryStorage(Storage):
         return self.memory
 
     def write(self, data: dict[str, dict[str, Any]]):
-        self.memory = data
+        pass

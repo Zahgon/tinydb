@@ -123,14 +123,7 @@ class TinyDB(TableBase):
         :param name: The name of the table.
         :param kwargs: Keyword arguments to pass to the table class constructor
         """
-
-        if name in self._tables:
-            return self._tables[name]
-
-        table = self.table_class(self.storage, name, **kwargs)
-        self._tables[name] = table
-
-        return table
+        pass
 
     def tables(self) -> set[str]:
         """
@@ -138,40 +131,13 @@ class TinyDB(TableBase):
 
         :returns: a set of table names
         """
-
-        # TinyDB stores data as a dict of tables like this:
-        #
-        #   {
-        #       '_default': {
-        #           0: {document...},
-        #           1: {document...},
-        #       },
-        #       'table1': {
-        #           ...
-        #       }
-        #   }
-        #
-        # To get a set of table names, we thus construct a set of this main
-        # dict which returns a set of the dict keys which are the table names.
-        #
-        # Storage.read() may return ``None`` if the database file is empty,
-        # so we need to consider this case to and return an empty set in this
-        # case.
-
-        return set(self.storage.read() or {})
+        pass
 
     def drop_tables(self) -> None:
         """
         Drop all tables from the database. **CANNOT BE REVERSED!**
         """
-
-        # We drop all tables from this database by writing an empty dict
-        # to the storage thereby returning to the initial state with no tables.
-        self.storage.write({})
-
-        # After that we need to remember to empty the ``_tables`` dict, so we'll
-        # create new table instances when a table is accessed again.
-        self._tables.clear()
+        pass
 
     def drop_table(self, name: str) -> None:
         """
@@ -179,27 +145,7 @@ class TinyDB(TableBase):
 
         :param name: The name of the table to drop.
         """
-
-        # If the table is currently opened, we need to forget the table class
-        # instance
-        if name in self._tables:
-            del self._tables[name]
-
-        data = self.storage.read()
-
-        # The database is uninitialized, there's nothing to do
-        if data is None:
-            return
-
-        # The table does not exist, there's nothing to do
-        if name not in data:
-            return
-
-        # Remove the table from the data dict
-        del data[name]
-
-        # Store the updated data back to the storage
-        self.storage.write(data)
+        pass
 
     @property
     def storage(self) -> Storage:
@@ -209,7 +155,7 @@ class TinyDB(TableBase):
         :return: This instance's storage
         :rtype: Storage
         """
-        return self._storage
+        pass
 
     def close(self) -> None:
         """
@@ -226,8 +172,7 @@ class TinyDB(TableBase):
 
         Upon leaving this context, the ``close`` method will be called.
         """
-        self._opened = False
-        self.storage.close()
+        pass
 
     def __enter__(self):
         """

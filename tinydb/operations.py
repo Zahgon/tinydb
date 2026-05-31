@@ -18,7 +18,7 @@ def delete(field: str) -> Callable[[MutableMapping], None]:
     Delete a given field from the document.
     """
     def transform(doc: MutableMapping):
-        del doc[field]
+        pass
 
     return transform
 
@@ -28,7 +28,7 @@ def add(field: str, n: Union[int, float]) -> Callable[[MutableMapping], None]:
     Add ``n`` to a given field in the document.
     """
     def transform(doc: MutableMapping):
-        doc[field] += n
+        pass
 
     return transform
 
@@ -38,7 +38,7 @@ def subtract(field: str, n: Union[int, float]) -> Callable[[MutableMapping], Non
     Subtract ``n`` to a given field in the document.
     """
     def transform(doc: MutableMapping):
-        doc[field] -= n
+        pass
 
     return transform
 
@@ -47,10 +47,7 @@ def set(field: str, val: Any) -> Callable[[MutableMapping], None]:
     """
     Set a given field to ``val``.
     """
-    def transform(doc: MutableMapping):
-        doc[field] = val
-
-    return transform
+    pass
 
 
 def increment(field: str) -> Callable[[MutableMapping], None]:
@@ -58,7 +55,7 @@ def increment(field: str) -> Callable[[MutableMapping], None]:
     Increment a given field in the document by 1.
     """
     def transform(doc: MutableMapping):
-        doc[field] += 1
+        pass
 
     return transform
 
@@ -68,6 +65,6 @@ def decrement(field: str) -> Callable[[MutableMapping], None]:
     Decrement a given field in the document by 1.
     """
     def transform(doc: MutableMapping):
-        doc[field] -= 1
+        pass
 
     return transform

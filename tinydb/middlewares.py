@@ -103,25 +103,14 @@ class CachingMiddleware(Middleware):
 
     def write(self, data):
         # Store data in cache
-        self.cache = data
-        self._cache_modified_count += 1
-
-        # Check if we need to flush the cache
-        if self._cache_modified_count >= self.WRITE_CACHE_SIZE:
-            self.flush()
+        pass
 
     def flush(self):
         """
         Flush all unwritten data to disk.
         """
-        if self._cache_modified_count > 0:
-            # Force-flush the cache by writing the data to the storage
-            self.storage.write(self.cache)
-            self._cache_modified_count = 0
+        pass
 
     def close(self):
         # Flush potentially unwritten data
-        self.flush()
-
-        # Let the storage clean up too
-        self.storage.close()
+        pass

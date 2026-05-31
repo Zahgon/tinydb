@@ -17,23 +17,8 @@ class TinyDBPlugin(Plugin):
         self.named_placeholders: dict[str, str] = {}
 
     def get_dynamic_class_hook(self, fullname: str) -> CB[DynamicClassDef]:
-        if fullname == 'tinydb.utils.with_typehint':
-            def hook(ctx: DynamicClassDefContext):
-                klass = ctx.call.args[0]
-                assert isinstance(klass, NameExpr)
-
-                type_name = klass.fullname
-                assert type_name is not None
-
-                qualified = self.lookup_fully_qualified(type_name)
-                assert qualified is not None
-
-                ctx.api.add_symbol_table_node(ctx.name, qualified)
-
-            return hook
-
-        return None
+        pass
 
 
 def plugin(_version: str):
-    return TinyDBPlugin
+    pass
